@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Template to Create an EC2 instance in a VPC
+   
+Parameters:
+
+  ImageId:
+    Type: String
+    Description: 'Windows AMI for Ireland eu-west1 Region'
+    Default: 'ami-04d48649b5e67e3be'
+  VpcId:
+    Type: String
+    Description: VPC id
+    Default: vpc-05c556561c1de5858
+  SubnetId:
+    Type: String
+    Description: Subnet in which to launch an EC2
+    Default: subnet-0f966966d3ff21184
+  InstanceType:
+    Type: String
+    Description: Choosing  t2 micro because it is free
+    Default: t2.micro
+  KeyName:
+    Description: SSH Keypair to login to the instance
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: QlikReplicate
+
+Resources:
+  QlikReplicateInstance:
+    Type: 'AWS::EC2::Instance'
+    Properties: 
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds:
+            - !Ref QlikReplicateSecurityGroup
+      BlockDeviceMappings:
+      - 
+        DeviceName: /dev/sda1
+        Ebs:
+          VolumeSize: 50
+      -
+        DeviceName: /dev/sdm
+        Ebs:
+          VolumeSize: 100
+      -
+        DeviceName: /dev/sdc
+        VirtualName: ephemeral10
+      
+  QlikReplicateSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref VpcId
+      GroupDescription: SG to allow SSH access via port 22
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: '0.0.0.0/0'
+      Tags:
+        - Key: Name
+          Value: QlikReplicateSSH-SG
+
+Outputs:
+  QlikReplicateInstanceId:
+    Description: Instance Id 
+    Value: !Ref QlikReplicateInstance
